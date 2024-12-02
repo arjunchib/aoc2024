@@ -1,5 +1,0 @@
-#!/bin/bash  
-
-cp  -r ./template ./day$1
-cd ./day$1
-mv ./dayX.jl ./day$1.jl
