@@ -32,15 +32,12 @@ pub fn part2(input) {
 }
 
 fn total_safe_reports(input, do_over) {
-  let reports =
-    input
-    |> string.trim
-    |> string.split("\n")
-    |> list.map(fn(level) {
-      level |> string.split(" ") |> list.filter_map(int.parse)
-    })
-
-  reports
+  input
+  |> string.trim
+  |> string.split("\n")
+  |> list.map(fn(level) {
+    level |> string.split(" ") |> list.filter_map(int.parse)
+  })
   |> list.count(safe_report(_, None, None, do_over))
 }
 
