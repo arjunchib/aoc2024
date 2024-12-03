@@ -41,15 +41,10 @@ fn total_safe_reports(input, do_over) {
     })
 
   reports
-  |> list.count(fn(levels) {
-    levels
-    |> safe_report(None, None, do_over)
-    // |> io.debug
-  })
+  |> list.count(safe_report(_, None, None, do_over))
 }
 
 fn safe_report(list, prev1, prev2, do_over) {
-  // io.debug(#(list, prev1, prev2, do_over))
   safe_report_pick(list, prev1, prev2, do_over)
   || safe_report_skip(list, prev1, prev2, do_over)
 }
