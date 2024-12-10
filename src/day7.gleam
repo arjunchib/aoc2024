@@ -1,12 +1,8 @@
-import gleam/bool
-import gleam/dict
 import gleam/int
 import gleam/io
 import gleam/list
-import gleam/option
 import gleam/pair
 import gleam/result
-import gleam/set
 import gleam/string
 import simplifile.{read}
 
@@ -24,53 +20,64 @@ const example = "
 
 pub fn main() {
   let assert 3749 = part1(example)
-  // let assert 6 = part2(example)
+  let assert 11_387 = part2(example)
   let assert Ok(input) = read(from: "./input/day7.txt")
   part1(input) |> int.to_string |> string.append(to: "PART I - ") |> io.println
-  // part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
+  part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
 }
 
 pub fn part1(input) {
-  let equations =
-    input
-    |> string.trim
-    |> string.split("\n")
-    |> list.filter_map(string.split_once(_, ": "))
-    |> list.map(fn(x) {
-      #(
-        result.unwrap(x.0 |> int.parse, 0),
-        x.1 |> string.split(" ") |> list.filter_map(int.parse),
-      )
-    })
-
-  equations
-  |> list.filter(valid_equation)
+  input
+  |> to_equations
+  |> list.filter(valid_equation(_, [int.add, int.multiply]))
   |> list.map(pair.first)
   |> int.sum
 }
 
 pub fn part2(input) {
-  todo
+  input
+  |> to_equations
+  |> list.filter(valid_equation(_, [int.add, int.multiply, concat]))
+  |> list.map(pair.first)
+  |> int.sum
 }
 
-fn valid_equation(equation) {
+fn to_equations(input) {
+  input
+  |> string.trim
+  |> string.split("\n")
+  |> list.filter_map(string.split_once(_, ": "))
+  |> list.map(fn(x) {
+    #(
+      result.unwrap(x.0 |> int.parse, 0),
+      x.1 |> string.split(" ") |> list.filter_map(int.parse),
+    )
+  })
+}
+
+fn valid_equation(equation, operators) {
   let #(test_value, nums) = equation
-  valid_equation_loop(test_value, nums)
+  valid_equation_loop(test_value, nums, operators)
 }
 
-fn valid_equation_loop(test_value, nums) {
+fn valid_equation_loop(test_value, nums, operators) {
   case nums {
-    [a, b] -> a + b == test_value || a * b == test_value
+    [a, b] -> operators |> list.any(fn(op) { op(a, b) == test_value })
     [a, b, ..rest] -> {
-      bool.and(
-        a + b <= test_value,
-        valid_equation_loop(test_value, [a + b, ..rest]),
-      )
-      || bool.and(
-        a * b <= test_value,
-        valid_equation_loop(test_value, [a * b, ..rest]),
-      )
+      operators
+      |> list.any(fn(op) {
+        let value = op(a, b)
+        value <= test_value
+        && valid_equation_loop(test_value, [value, ..rest], operators)
+      })
     }
     _ -> True
+  }
+}
+
+fn concat(a, b) {
+  case int.parse(a |> int.to_string <> b |> int.to_string) {
+    Ok(x) -> x
+    Error(_) -> panic
   }
 }
