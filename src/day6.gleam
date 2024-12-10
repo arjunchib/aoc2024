@@ -2,10 +2,8 @@ import gleam/bool
 import gleam/dict
 import gleam/int
 import gleam/io
-import gleam/iterator
 import gleam/list
-import gleam/option.{type Option, None, Some}
-import gleam/regex
+import gleam/option
 import gleam/result
 import gleam/set
 import gleam/string
@@ -109,30 +107,6 @@ pub fn part2(input) {
       set.new(),
     ))
   state.paradox |> set.size
-}
-
-fn debug(state: State) {
-  let str =
-    iterator.range(from: 0, to: state.max_row)
-    |> iterator.to_list
-    |> list.map(fn(r) {
-      iterator.range(from: 0, to: state.max_col)
-      |> iterator.to_list
-      |> list.map(fn(c) {
-        case state.visited |> dict.has_key(#(r, c)) {
-          True -> "X"
-          False ->
-            case state.occupied |> set.contains(#(r, c)) {
-              True -> "#"
-              False -> "."
-            }
-        }
-      })
-      |> string.join("")
-    })
-    |> string.join("\n")
-  io.println(str)
-  state
 }
 
 fn walk(state: State) {

@@ -2,7 +2,7 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/option.{Some}
-import gleam/regex
+import gleam/regexp
 import gleam/result
 import gleam/string
 import simplifile.{read}
@@ -20,19 +20,19 @@ pub fn main() {
 }
 
 pub fn part1(input) {
-  let assert Ok(re) = regex.from_string("mul\\((\\d+),(\\d+)\\)")
-  regex.scan(with: re, content: input)
+  let assert Ok(re) = regexp.from_string("mul\\((\\d+),(\\d+)\\)")
+  regexp.scan(with: re, content: input)
   |> list.map(mul)
   |> int.sum
 }
 
 fn part2(input) {
   let assert Ok(re) =
-    regex.from_string("mul\\((\\d+),(\\d+)\\)|don't\\(\\)|do\\(\\)")
-  regex.scan(with: re, content: input) |> part2_sum(True, 0)
+    regexp.from_string("mul\\((\\d+),(\\d+)\\)|don't\\(\\)|do\\(\\)")
+  regexp.scan(with: re, content: input) |> part2_sum(True, 0)
 }
 
-fn part2_sum(matches: List(regex.Match), enabled, sum) {
+fn part2_sum(matches: List(regexp.Match), enabled, sum) {
   case matches {
     [hd, ..rest] ->
       case hd.content {
@@ -45,7 +45,7 @@ fn part2_sum(matches: List(regex.Match), enabled, sum) {
   }
 }
 
-fn mul(match: regex.Match) {
+fn mul(match: regexp.Match) {
   case match.submatches {
     [Some(x), Some(y)] -> {
       let x = result.unwrap(int.parse(x), 1)

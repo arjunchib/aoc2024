@@ -1,11 +1,7 @@
 import gleam/dict
 import gleam/int
 import gleam/io
-import gleam/iterator
 import gleam/list
-import gleam/option.{Some}
-import gleam/regex
-import gleam/result
 import gleam/set
 import gleam/string
 import simplifile.{read}
