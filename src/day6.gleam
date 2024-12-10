@@ -50,36 +50,16 @@ pub fn main() {
 }
 
 pub fn part1(input) {
-  let #(occupied, guard, r, c) =
-    input
-    |> string.trim
-    |> string.to_graphemes
-    |> list.fold(#(set.new(), #(0, 0), 0, 0), fn(acc, letter) {
-      let #(occupied, guard, row, col) = acc
-      case letter {
-        "#" -> #(occupied |> set.insert(#(row, col)), guard, row, col + 1)
-        "\n" -> #(occupied, guard, row + 1, 0)
-        "^" -> #(occupied, #(row, col), row, col + 1)
-        _ -> #(occupied, guard, row, col + 1)
-      }
-    })
-  let max_row = r
-  let max_col = c - 1
-
-  let state =
-    walk(WalkState(
-      occupied,
-      guard,
-      North,
-      dict.new(),
-      max_row,
-      max_col,
-      set.new(),
-    ))
+  let state = input |> init_state |> walk
   state.visited |> dict.size
 }
 
 pub fn part2(input) {
+  let state = input |> init_state |> walk
+  state.paradox |> set.size
+}
+
+fn init_state(input) {
   let #(occupied, guard, r, c) =
     input
     |> string.trim
@@ -95,18 +75,7 @@ pub fn part2(input) {
     })
   let max_row = r
   let max_col = c - 1
-
-  let state =
-    walk(WalkState(
-      occupied,
-      guard,
-      North,
-      dict.new(),
-      max_row,
-      max_col,
-      set.new(),
-    ))
-  state.paradox |> set.size
+  WalkState(occupied, guard, North, dict.new(), max_row, max_col, set.new())
 }
 
 fn walk(state: State) {
