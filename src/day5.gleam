@@ -41,13 +41,40 @@ const example = "
 
 pub fn main() {
   let assert 143 = part1(example)
-  // let assert 9 = part2(example)
+  let assert 123 = part2(example)
   let assert Ok(input) = read(from: "./input/day5.txt")
   part1(input) |> int.to_string |> string.append(to: "PART I - ") |> io.println
-  // part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
+  part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
 }
 
 pub fn part1(input) {
+  let #(rules, updates) = input |> parse_input
+  let valid_updates = updates |> list.filter(valid_update(_, rules))
+
+  valid_updates
+  |> list.map(fn(update) {
+    let len = update |> list.length
+    update |> list.drop(len / 2) |> list.first |> force_unwrap
+  })
+  |> int.sum
+}
+
+pub fn part2(input) {
+  let #(rules, updates) = input |> parse_input
+  let #(_valid_updates, invalid_updates) =
+    updates
+    |> list.partition(valid_update(_, rules))
+
+  let fixed_updates = invalid_updates |> list.filter_map(fix_update(_, rules))
+  fixed_updates
+  |> list.map(fn(update) {
+    let len = update |> list.length
+    update |> list.drop(len / 2) |> list.first |> force_unwrap
+  })
+  |> int.sum
+}
+
+fn parse_input(input) {
   let #(str1, str2) =
     input |> string.trim |> string.split_once("\n\n") |> force_unwrap
 
@@ -75,18 +102,7 @@ pub fn part1(input) {
       update |> string.split(",") |> list.filter_map(int.parse)
     })
 
-  let valid_updates = updates |> list.filter(valid_update(_, rules))
-
-  valid_updates
-  |> list.map(fn(update) {
-    let len = update |> list.length
-    update |> list.drop(len / 2) |> list.first |> force_unwrap
-  })
-  |> int.sum
-}
-
-pub fn part2(input) {
-  todo
+  #(rules, updates)
 }
 
 fn valid_update(update, rules) {
@@ -100,6 +116,41 @@ fn valid_update(update, rules) {
         }
       })
       && valid_update(rest, rules)
+    [] -> True
+  }
+}
+
+fn fix_update(update, rules) {
+  let update = update |> set.from_list
+  fix_update_loop(update, rules, [])
+}
+
+fn fix_update_loop(update, rules, reordered) {
+  case update |> set.is_empty {
+    True -> Ok(reordered)
+    False ->
+      update
+      |> set.to_list
+      |> list.find_map(fn(a) {
+        let reordered = [a, ..reordered]
+        case valid_update_once(reordered, rules) {
+          True -> fix_update_loop(update |> set.delete(a), rules, reordered)
+          False -> Error(Nil)
+        }
+      })
+  }
+}
+
+fn valid_update_once(update, rules) {
+  case update {
+    [x, ..rest] ->
+      rest
+      |> list.all(fn(y) {
+        case rules |> dict.get(y) {
+          Ok(set) -> set |> set.contains(x) |> bool.negate
+          _ -> True
+        }
+      })
     [] -> True
   }
 }
