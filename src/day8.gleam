@@ -5,7 +5,6 @@ import gleam/list
 import gleam/option.{None, Some}
 import gleam/set
 import gleam/string
-import gleam/yielder
 import simplifile.{read}
 
 const example = "
@@ -32,46 +31,36 @@ pub fn main() {
 }
 
 pub fn part1(input) {
-  let #(antennas, rows, cols) =
-    input
-    |> string.trim
-    |> string.to_graphemes
-    |> list.fold(#(dict.new(), 0, 0), fn(acc, a) {
-      let #(antennas, r, c) = acc
-      case a {
-        "\n" -> #(antennas, r + 1, 0)
-        "." -> #(antennas, r, c + 1)
-        _ -> {
-          let antennas =
-            antennas
-            |> dict.upsert(a, fn(x) {
-              case x {
-                Some(rest) -> [#(r, c), ..rest]
-                None -> [#(r, c)]
-              }
-            })
-          #(antennas, r, c + 1)
-        }
-      }
-    })
-  let cols = cols - 1
+  let #(antennas, rows, cols) = input |> parse_input
 
-  let antinodes =
-    antennas
-    |> dict.fold(set.new(), fn(acc, _k, v) {
-      let antinodes =
-        set.from_list(
-          v |> permutations2 |> list.filter_map(find_antinode(_, rows, cols)),
-        )
-      acc |> set.union(antinodes)
-    })
-
-  // debug(rows, cols, antinodes)
-
-  antinodes |> set.size
+  antennas
+  |> dict.fold(set.new(), fn(acc, _k, v) {
+    let antinodes =
+      set.from_list(
+        v |> permutations2 |> list.filter_map(find_antinode(_, rows, cols)),
+      )
+    acc |> set.union(antinodes)
+  })
+  |> set.size
 }
 
 pub fn part2(input) {
+  let #(antennas, rows, cols) = input |> parse_input
+
+  antennas
+  |> dict.fold(set.new(), fn(acc, _k, v) {
+    let antinodes =
+      v
+      |> permutations2
+      |> list.fold(acc, fn(acc, a) {
+        find_antinodes(a, rows, cols) |> set.union(acc)
+      })
+    acc |> set.union(antinodes)
+  })
+  |> set.size
+}
+
+fn parse_input(input) {
   let #(antennas, rows, cols) =
     input
     |> string.trim
@@ -94,23 +83,7 @@ pub fn part2(input) {
         }
       }
     })
-  let cols = cols - 1
-
-  let antinodes =
-    antennas
-    |> dict.fold(set.new(), fn(acc, _k, v) {
-      let antinodes =
-        v
-        |> permutations2
-        |> list.fold(acc, fn(acc, a) {
-          find_antinodes(a, rows, cols) |> set.union(acc)
-        })
-      acc |> set.union(antinodes)
-    })
-
-  // debug(rows, cols, antinodes)
-
-  antinodes |> set.size
+  #(antennas, rows, cols - 1)
 }
 
 fn permutations2(a) {
@@ -154,21 +127,4 @@ fn find_antinodes_loop(r, c, dr, dc, rows, cols) {
     True -> find_antinodes_loop(r, c, dr, dc, rows, cols) |> set.insert(#(r, c))
     False -> set.new()
   }
-}
-
-fn debug(rows, cols, antinodes) {
-  io.print(
-    list.range(0, rows)
-    |> list.map(fn(r) {
-      list.range(0, cols)
-      |> list.map(fn(c) {
-        case antinodes |> set.contains(#(r, c)) {
-          True -> "#"
-          False -> "."
-        }
-      })
-      |> string.join("")
-    })
-    |> string.join("\n"),
-  )
 }
