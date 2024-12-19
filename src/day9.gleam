@@ -3,7 +3,6 @@ import gleam/int
 import gleam/io
 import gleam/list
 import gleam/order
-import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/yielder
@@ -18,38 +17,39 @@ pub type Space {
 
 pub fn main() {
   let assert 1928 = part1(example)
-  // let assert 34 = part2(example)
+  let assert 2858 = part2(example)
   let assert Ok(input) = read(from: "./input/day9.txt")
   part1(input) |> int.to_string |> string.append(to: "PART I - ") |> io.println
-  // part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
+  part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
 }
 
 pub fn part1(input) {
-  input |> parse_input |> compact |> checksum
+  let #(_, blocks) = input |> parse_input
+  blocks |> compact |> checksum
 }
 
 pub fn part2(input) {
-  todo
+  let #(id, blocks) = input |> parse_input
+  blocks |> compact2(id) |> checksum
 }
 
 fn parse_input(input) {
-  input
-  |> string.trim()
-  |> string.to_graphemes
-  |> list.map_fold(0, fn(i, a) {
-    let size = case int.parse(a) {
-      Ok(size) -> size
-      Error(_) -> panic
-    }
-    let block = case i % 2 {
-      0 -> File(i / 2, size)
-      _ -> Empty(size)
-    }
-
-    #(i + 1, block)
-  })
-  |> pair.second
-  |> deque.from_list
+  let #(i, blocks) =
+    input
+    |> string.trim()
+    |> string.to_graphemes
+    |> list.map_fold(0, fn(i, a) {
+      let size = case int.parse(a) {
+        Ok(size) -> size
+        Error(_) -> panic
+      }
+      let block = case i % 2 {
+        0 -> File(i / 2, size)
+        _ -> Empty(size)
+      }
+      #(i + 1, block)
+    })
+  #(i / 2, blocks |> deque.from_list)
 }
 
 fn compact(blocks: Deque(Space)) {
@@ -118,7 +118,7 @@ fn checksum_loop(blocks: List(Space), index: Int) {
           }
           block_sum + checksum_loop(rest, index + size)
         }
-        Empty(_) -> panic
+        Empty(size) -> checksum_loop(rest, index + size)
       }
     [] -> 0
   }
@@ -142,4 +142,48 @@ fn debug(blocks: List(Space)) {
     |> string.join(""),
   )
   blocks
+}
+
+fn compact2(blocks: Deque(Space), id: Int) {
+  case id {
+    0 -> blocks |> deque.to_list
+    _ -> {
+      let #(id, size, left, right) = last_id(blocks, id, [])
+      compact2(first_fit(left, id, size), id - 1)
+      |> list.append(right)
+    }
+  }
+}
+
+fn last_id(blocks: Deque(Space), id: Int, right: List(Space)) {
+  case blocks |> deque.pop_back {
+    Ok(#(File(..) as file, left)) if file.id == id -> #(
+      file.id,
+      file.size,
+      left,
+      right,
+    )
+    Ok(#(space, rest)) -> last_id(rest, id, [space, ..right])
+    Error(Nil) -> panic
+  }
+}
+
+fn first_fit(blocks: Deque(Space), id: Int, size: Int) {
+  case blocks |> deque.pop_front {
+    Ok(#(Empty(..) as empty, rest)) if empty.size >= size ->
+      case int.compare(empty.size, size) {
+        order.Gt ->
+          rest
+          |> deque.push_front(Empty(empty.size - size))
+          |> deque.push_front(File(id, size))
+          |> deque.push_back(Empty(size))
+        order.Eq ->
+          rest
+          |> deque.push_front(File(id, size))
+          |> deque.push_back(Empty(size))
+        _ -> panic
+      }
+    Ok(#(space, rest)) -> first_fit(rest, id, size) |> deque.push_front(space)
+    Error(Nil) -> deque.from_list([File(id, size)])
+  }
 }
