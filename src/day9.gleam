@@ -5,8 +5,9 @@ import gleam/list
 import gleam/order
 import gleam/result
 import gleam/string
-import gleam/yielder
 import simplifile.{read}
+
+// import gleam/yielder
 
 const example = "2333133121414131402"
 
@@ -124,25 +125,25 @@ fn checksum_loop(blocks: List(Space), index: Int) {
   }
 }
 
-fn debug(blocks: List(Space)) {
-  io.debug(
-    blocks
-    |> list.map(fn(block) {
-      case block {
-        File(id, size) ->
-          yielder.repeat(id |> int.to_string)
-          |> yielder.take(size)
-          |> yielder.fold("", fn(acc, x) { acc <> x })
-        Empty(size) ->
-          yielder.repeat(".")
-          |> yielder.take(size)
-          |> yielder.fold("", fn(acc, x) { acc <> x })
-      }
-    })
-    |> string.join(""),
-  )
-  blocks
-}
+// fn debug(blocks: List(Space)) {
+//   io.debug(
+//     blocks
+//     |> list.map(fn(block) {
+//       case block {
+//         File(id, size) ->
+//           yielder.repeat(id |> int.to_string)
+//           |> yielder.take(size)
+//           |> yielder.fold("", fn(acc, x) { acc <> x })
+//         Empty(size) ->
+//           yielder.repeat(".")
+//           |> yielder.take(size)
+//           |> yielder.fold("", fn(acc, x) { acc <> x })
+//       }
+//     })
+//     |> string.join(""),
+//   )
+//   blocks
+// }
 
 fn compact2(blocks: Deque(Space), id: Int) {
   case id {
