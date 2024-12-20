@@ -5,6 +5,7 @@ import gleam/list
 import gleam/result
 import gleam/set
 import gleam/string
+import rememo/memo
 import simplifile.{read}
 
 const example = "125 17"
@@ -17,11 +18,13 @@ pub fn main() {
 }
 
 pub fn part1(input) {
-  input |> parse_input |> blink(25) |> list.length
+  use cache <- memo.create()
+  input |> parse_input |> blink(25, cache)
 }
 
 pub fn part2(input) {
-  input |> parse_input |> blink(75) |> list.length
+  use cache <- memo.create()
+  input |> parse_input |> blink(75, cache)
 }
 
 fn parse_input(input) {
@@ -31,30 +34,57 @@ fn parse_input(input) {
   |> list.filter_map(int.parse)
 }
 
-fn blink(stones, i) {
-  let stones =
-    stones
-    |> list.flat_map(fn(stone) {
-      let stone_str = stone |> int.to_string
-      let stone_len = stone_str |> string.length
-      case stone {
-        0 -> [1]
-        _ if stone_len % 2 == 0 -> {
-          let n1 = stone_str |> string.slice(0, stone_len / 2) |> parse_int
-          let n2 =
-            stone_str
-            |> string.slice(stone_len / 2, stone_len / 2)
-            |> parse_int
-          [n1, n2]
-        }
-        _ -> [stone * 2024]
-      }
-    })
+fn blink(stones, i, cache) {
   case i {
-    1 -> stones
-    _ -> blink(stones, i - 1)
+    0 -> stones |> list.length
+    _ ->
+      stones
+      |> list.map(fn(stone) {
+        use <- memo.memoize(cache, #(stone, i))
+        let stone_str = stone |> int.to_string
+        let stone_len = stone_str |> string.length
+        let new_stones = case stone {
+          0 -> [1]
+          _ if stone_len % 2 == 0 -> {
+            let n1 = stone_str |> string.slice(0, stone_len / 2) |> parse_int
+            let n2 =
+              stone_str
+              |> string.slice(stone_len / 2, stone_len / 2)
+              |> parse_int
+            [n1, n2]
+          }
+          _ -> [stone * 2024]
+        }
+        blink(new_stones, i - 1, cache)
+      })
+      |> int.sum
   }
 }
+
+// fn blink(stones, i) {
+//   let stones =
+//     stones
+//     |> list.flat_map(fn(stone) {
+//       let stone_str = stone |> int.to_string
+//       let stone_len = stone_str |> string.length
+//       case stone {
+//         0 -> [1]
+//         _ if stone_len % 2 == 0 -> {
+//           let n1 = stone_str |> string.slice(0, stone_len / 2) |> parse_int
+//           let n2 =
+//             stone_str
+//             |> string.slice(stone_len / 2, stone_len / 2)
+//             |> parse_int
+//           [n1, n2]
+//         }
+//         _ -> [stone * 2024]
+//       }
+//     })
+//   case i {
+//     1 -> stones
+//     _ -> blink(stones, i - 1)
+//   }
+// }
 
 fn parse_int(a) {
   case a |> int.parse {
