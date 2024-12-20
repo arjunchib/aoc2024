@@ -21,10 +21,10 @@ const example = "
 
 pub fn main() {
   let assert 36 = part1(example)
-  // let assert 34 = part2(example)
+  let assert 81 = part2(example)
   let assert Ok(input) = read(from: "./input/day10.txt")
   part1(input) |> int.to_string |> string.append(to: "PART I - ") |> io.println
-  // part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
+  part2(input) |> int.to_string |> string.append(to: "PART II - ") |> io.println
 }
 
 pub fn part1(input) {
@@ -33,7 +33,8 @@ pub fn part1(input) {
 }
 
 pub fn part2(input) {
-  todo
+  let #(map, trailheads) = input |> parse_input
+  trailheads |> list.map(fn(loc) { hike2(0, loc, map) }) |> int.sum
 }
 
 fn parse_input(input) {
@@ -74,5 +75,19 @@ fn hike(height, location: #(Int, Int), map) {
       |> set.union(hike(height + 1, #(r - 1, c), map))
     }
     _ -> set.new()
+  }
+}
+
+fn hike2(height, location: #(Int, Int), map) {
+  case map |> dict.get(location) {
+    Ok(h) if height == h && h == 9 -> 1
+    Ok(h) if height == h -> {
+      let #(r, c) = location
+      hike2(height + 1, #(r, c + 1), map)
+      + hike2(height + 1, #(r, c - 1), map)
+      + hike2(height + 1, #(r + 1, c), map)
+      + hike2(height + 1, #(r - 1, c), map)
+    }
+    _ -> 0
   }
 }
